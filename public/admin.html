@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="robots" content="noindex, nofollow">
+	<title>Painel — Canal de Denúncias Estrela Nova</title>
+	<link rel="icon" href="/assets/img/favicon.png">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700&family=Roboto+Slab:wght@300;400&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="/assets/css/style.css">
+	<script type="module" src="/assets/js/comum.js"></script>
+	<script type="module" src="/assets/js/admin.js"></script>
+</head>
+<body>
+<main>
+	<div class="container">
+		<section id="tela-login" class="login-box oculto">
+			<div class="form-bloco">
+				<h1>Área restrita</h1>
+				<p>Acesso exclusivo da equipe de apuração.</p>
+				<div id="alertas-login"></div>
+				<button class="btn btn-google btn-block" type="button" id="btn-login">
+					<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.7 1.2 9.2 3.6l6.9-6.9C35.9 2.4 30.4 0 24 0 14.6 0 6.6 5.4 2.7 13.3l8 6.2C12.6 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.7c4.3-4 6.9-9.9 6.9-17.1z"/><path fill="#FBBC05" d="M10.7 28.5c-.5-1.4-.8-2.9-.8-4.5s.3-3.1.8-4.5l-8-6.2C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l8-6.2z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.7c-2.1 1.4-4.8 2.3-8.5 2.3-6.2 0-11.4-4.1-13.3-9.8l-8 6.2C6.6 42.6 14.6 48 24 48z"/></svg>
+					Entrar com Google
+				</button>
+			</div>
+		</section>
+
+		<p id="tela-carregando" class="carregando">Carregando…</p>
+
+		<section id="tela-painel" class="oculto">
+			<div class="admin-topo">
+				<h1>Denúncias</h1>
+				<div class="admin-usuario">
+					<span id="usuario-email"></span>
+					<button class="btn btn-outline btn-sm" type="button" id="btn-logout">Sair</button>
+				</div>
+			</div>
+
+			<div class="kpis" id="kpis"></div>
+
+			<div class="admin-layout">
+				<div>
+					<div class="filtros">
+						<select class="form-control" id="filtro-status" aria-label="Filtrar por status">
+							<option value="">Todos os status</option>
+						</select>
+						<select class="form-control" id="filtro-categoria" aria-label="Filtrar por categoria">
+							<option value="">Todas as categorias</option>
+						</select>
+						<input class="form-control" id="filtro-busca" type="search" placeholder="Buscar protocolo ou texto" aria-label="Buscar">
+					</div>
+					<ul class="lista-denuncias" id="lista"></ul>
+				</div>
+				<div id="detalhe" class="form-bloco detalhe">
+					<p class="carregando">Selecione uma denúncia para ver os detalhes.</p>
+				</div>
+			</div>
+		</section>
+	</div>
+</main>
+</body>
+</html>

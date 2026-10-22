@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Acompanhar denúncia — Canal de Denúncias Estrela Nova</title>
+	<link rel="icon" href="/assets/img/favicon.png">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700&family=Roboto+Slab:wght@300;400&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="/assets/css/style.css">
+	<script type="module" src="/assets/js/comum.js"></script>
+	<script type="module" src="/assets/js/acompanhar.js"></script>
+</head>
+<body>
+<main>
+	<div class="container container-estreito">
+		<div class="pagina-titulo">
+			<h1>Acompanhar denúncia</h1>
+			<p>Informe o número de protocolo e a senha criada no momento do registro.</p>
+		</div>
+
+		<div id="alertas"></div>
+
+		<form id="form-acesso" class="form-bloco" novalidate>
+			<div class="grid grid-2 gap-16">
+				<div class="campo">
+					<label for="protocolo">Protocolo</label>
+					<input class="form-control" id="protocolo" name="protocolo" required autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX" maxlength="20">
+				</div>
+				<div class="campo">
+					<label for="senha">Senha</label>
+					<input class="form-control" id="senha" name="senha" type="password" required autocomplete="current-password" maxlength="128">
+				</div>
+			</div>
+			<button class="btn btn-dark-blue btn-block mt-12" type="submit" id="btn-acessar">Consultar</button>
+		</form>
+
+		<section id="painel" class="oculto">
+			<div class="form-bloco">
+				<div class="detalhe">
+					<div class="cabecalho">
+						<h2 id="p-protocolo"></h2>
+						<span id="p-status"></span>
+					</div>
+				</div>
+				<div class="linha-tempo" id="p-linha"></div>
+				<dl class="detalhe-resumo" id="p-resumo"></dl>
+			</div>
+
+			<div class="form-bloco">
+				<h2>Conversa com a equipe de apuração</h2>
+				<div class="mensagens" id="p-mensagens"></div>
+				<form id="form-mensagem" novalidate>
+					<div class="campo">
+						<label for="texto">Enviar nova informação ou responder</label>
+						<textarea class="form-control" id="texto" name="texto" maxlength="5000" rows="4" placeholder="Escreva sua mensagem…"></textarea>
+					</div>
+					<div class="botoes-centro">
+						<button class="btn btn-pink" type="submit" id="btn-mensagem">Enviar mensagem</button>
+						<button class="btn btn-outline" type="button" id="btn-sair">Sair</button>
+					</div>
+				</form>
+			</div>
+		</section>
+	</div>
+</main>
+</body>
+</html>

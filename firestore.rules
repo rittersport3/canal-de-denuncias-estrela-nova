@@ -1,0 +1,48 @@
+rules_version = '2';
+
+// Somente o administrador (login Google com e-mail verificado) acessa as
+// denúncias diretamente. Denunciantes falam apenas com as Cloud Functions,
+// que usam o Admin SDK e ignoram estas regras.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email == 'pedro.a.m.pimenta@gmail.com'
+        && request.auth.token.email_verified == true
+        && request.auth.token.firebase.sign_in_provider == 'google.com';
+    }
+
+    match /denuncias/{protocolo} {
+      allow read: if isAdmin();
+      // O admin só altera status e metadados de triagem; o relato é imutável.
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['status', 'atualizadaEm', 'prioridade', 'aguardandoResposta']);
+
+      match /mensagens/{mensagemId} {
+        allow read: if isAdmin();
+        allow create: if isAdmin()
+          && request.resource.data.keys().hasOnly(['autor', 'texto', 'criadaEm'])
+          && request.resource.data.autor == 'comite'
+          && request.resource.data.texto is string
+          && request.resource.data.texto.size() > 0
+          && request.resource.data.texto.size() <= 5000
+          && request.resource.data.criadaEm == request.time;
+      }
+
+      match /notas/{notaId} {
+        allow read, create, delete: if isAdmin();
+      }
+    }
+
+    // Hash de senhas e controle de tentativas: nunca acessível por clientes.
+    match /segredos/{protocolo} {
+      allow read, write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
