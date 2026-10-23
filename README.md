@@ -19,7 +19,10 @@ Roda inteiro no **Firebase** (Hosting, Firestore, Storage, Auth e Cloud Function
 - Indicadores, lista com filtros por status e categoria, e busca.
 - Detalhes da denúncia, download de anexos, alteração de status e prioridade.
 - Responde ao denunciante e mantém **anotações internas**, que o denunciante não vê.
-- Recebe **aviso por e-mail** (enviado pelo Brevo) a cada nova denúncia ou nova mensagem do denunciante. Por segurança, o e-mail **não** traz o conteúdo da denúncia, só o protocolo e o link do painel.
+- **Destinatários dos avisos** cadastrados no próprio painel, em duas listas:
+  - **Denúncias comuns**: avisada quando o denunciante informa que a situação não envolve a diretoria.
+  - **Quando pode envolver a diretoria**: avisada, **sozinha**, quando o denunciante responde "Sim" ou "Não sei". Assim um membro da diretoria não é avisado de uma denúncia que pode ser contra ele. Se essa lista estiver vazia, ninguém é avisado e o caso aparece só no painel (com o selo "diretoria").
+- Os avisos são enviados pelo Brevo, um e-mail separado por destinatário. Por segurança, o e-mail **não** traz o conteúdo da denúncia, só o protocolo e o link do painel.
 
 ## Segurança
 
@@ -60,7 +63,8 @@ Nenhum secret é obrigatório no GitHub. Opcionalmente:
 - **Avisos por e-mail** (via [Brevo](https://www.brevo.com), plano gratuito de 300 e-mails/dia):
   1. Crie uma conta no Brevo e, em *Remetentes, domínios e IPs dedicados → Remetentes*, adicione e confirme o e-mail remetente.
   2. Em *SMTP e API → Chaves de API*, gere uma chave e salve-a no GitHub em *Settings → Environments → producao → Add environment secret*, com o nome `BREVO_API_KEY`.
-  3. Preencha `AVISO_REMETENTE` e `AVISO_DESTINATARIO` em `functions/.env`.
+  3. Preencha `AVISO_REMETENTE` em `functions/.env` com o remetente verificado.
+  4. Cadastre os destinatários no painel, em *Destinatários dos avisos*.
 
   A chave é enviada ao Google Cloud no próximo deploy. Sem ela, o valor fica "desativado" e o sistema funciona sem avisos.
 - **Aprovação manual de cada deploy**: em *Environments → producao → Required reviewers*.

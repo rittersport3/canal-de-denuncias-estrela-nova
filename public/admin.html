@@ -34,9 +34,35 @@
 				<h1>Denúncias</h1>
 				<div class="admin-usuario">
 					<span id="usuario-email"></span>
+					<button class="btn btn-blue btn-sm" type="button" id="btn-avisos" aria-expanded="false" aria-controls="config-avisos">Destinatários dos avisos</button>
 					<button class="btn btn-outline btn-sm" type="button" id="btn-logout">Sair</button>
 				</div>
 			</div>
+
+			<section id="config-avisos" class="form-bloco oculto" aria-labelledby="titulo-avisos">
+				<h2 id="titulo-avisos">Destinatários dos avisos por e-mail</h2>
+				<p>Quem recebe um e-mail a cada nova denúncia ou nova mensagem do denunciante. O e-mail traz apenas o protocolo, sem o conteúdo da denúncia. Informe um e-mail por linha (até 20 por lista).</p>
+				<div id="pendencias-avisos"></div>
+				<div id="alertas-avisos"></div>
+				<form id="form-avisos" novalidate>
+					<div class="grid grid-2 gap-16">
+						<div class="campo">
+							<label for="avisos-padrao">Denúncias comuns</label>
+							<textarea class="form-control" id="avisos-padrao" rows="6" spellcheck="false" placeholder="comite@estrelanova.org.br"></textarea>
+							<span class="ajuda">Recebem quando o denunciante informa que a situação <strong>não</strong> envolve a diretoria.</span>
+						</div>
+						<div class="campo">
+							<label for="avisos-diretoria">Quando pode envolver a diretoria</label>
+							<textarea class="form-control" id="avisos-diretoria" rows="6" spellcheck="false" placeholder="conselho.fiscal@exemplo.org"></textarea>
+							<span class="ajuda">Recebem <strong>somente</strong> estes, quando o denunciante responde "Sim" ou "Não sei". Não inclua membros da diretoria.</span>
+						</div>
+					</div>
+					<div class="botoes-centro mt-12">
+						<button class="btn btn-pink btn-sm" type="submit">Salvar destinatários</button>
+					</div>
+					<p class="ajuda centro mt-12" id="avisos-atualizacao"></p>
+				</form>
+			</section>
 
 			<div class="kpis" id="kpis"></div>
 

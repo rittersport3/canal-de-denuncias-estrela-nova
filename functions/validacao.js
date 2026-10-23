@@ -94,6 +94,7 @@ function validarDenuncia(d) {
 
   const vinculo = VINCULOS[d.vinculo] ? d.vinculo : "nao_informado";
   const emAndamento = ["sim", "nao", "nao_sei"].includes(d.emAndamento) ? d.emAndamento : "nao_sei";
+  const envolveDiretoria = ["sim", "nao", "nao_sei"].includes(d.envolveDiretoria) ? d.envolveDiretoria : "nao_sei";
 
   return {
     categoria: d.categoria,
@@ -107,6 +108,7 @@ function validarDenuncia(d) {
     testemunhas: texto(d.testemunhas, { max: 2000, campo: "Testemunhas" }),
     jaComunicou: texto(d.jaComunicou, { max: 2000, campo: "Já comunicou" }),
     emAndamento,
+    envolveDiretoria,
     senha: validarSenha(d.senha),
     anexos: Array.isArray(d.anexos) ? d.anexos : [],
   };
