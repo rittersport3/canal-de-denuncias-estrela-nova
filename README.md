@@ -34,56 +34,47 @@ Roda inteiro no **Firebase** (Hosting, Firestore, Storage, Auth e Cloud Function
 O e-mail do admin está fixado no código. Para trocá-lo, altere:
 `firestore.rules`, `storage.rules`, `functions/index.js` (`ADMIN_EMAIL`) e, só para a interface, `public/assets/js/firebase.js`.
 
-## Como publicar (passo a passo)
+## Publicação
 
-Use a conta **pedro.a.m.pimenta@gmail.com**.
+O sistema está publicado no projeto Firebase **`canal-denuncias-estrela-nova`** (conta pedro.a.m.pimenta@gmail.com, plano Blaze):
 
-1. **Crie o projeto** em <https://console.firebase.google.com> (ex.: `canal-denuncias-estrela-nova`). Se o ID for diferente, ajuste `.firebaserc`.
-2. **Ative o plano Blaze** (pagamento por uso), exigido por Cloud Functions e Storage. Para o volume de um canal de denúncias, o custo esperado é zero ou de centavos, porque fica dentro da cota gratuita. Crie um **alerta de orçamento** (ex.: R$ 10) em *Uso e faturamento*.
-3. **Authentication → Método de login**: ative **Google** e **Anônimo**. O anônimo serve só para autorizar o envio de anexos e não identifica ninguém.
-4. **Firestore Database**: crie em modo produção, região `southamerica-east1`.
-5. **Storage**: crie o bucket padrão, de preferência na mesma região.
-6. **Conta de serviço para o deploy automático**: abra o [Cloud Shell](https://shell.cloud.google.com) com a mesma conta, envie o arquivo `scripts/configurar-deploy.sh` (menu ⋮ → *Upload*) e rode:
-   ```bash
-   bash configurar-deploy.sh <ID_DO_PROJETO>
-   ```
-   O script ativa as APIs, cria a conta `github-deploy` com as permissões necessárias e imprime uma chave JSON.
-7. **Configure o GitHub** em *Settings → Environments → New environment*. Crie o ambiente `producao` e, nele:
-   - **Secret `FIREBASE_SERVICE_ACCOUNT`**: cole o JSON impresso pelo script e depois apague o arquivo no Cloud Shell (`rm chave-github.json`).
-   - **Secret `GMAIL_APP_PASSWORD`** (opcional, para os avisos por e-mail): ative a verificação em duas etapas na conta Google e gere uma senha de app em <https://myaccount.google.com/apppasswords>. Sem esse secret, o sistema funciona, mas sem avisos por e-mail.
-   - Em *Settings → Secrets and variables → Actions → Variables*, crie a **variável `FIREBASE_PROJECT_ID`** com o ID do projeto.
-   - Opcional: em *Deployment protection rules*, marque *Required reviewers* para aprovar cada deploy manualmente.
-8. **Deploy**: todo push ou merge na branch `main` roda os testes e, se passarem, publica no Firebase. Para rodar sem um novo commit, use *Actions → CI/CD → Run workflow*.
-9. O site fica em `https://<id-do-projeto>.web.app`. O painel fica em `/admin`.
+- Site: <https://canal-denuncias-estrela-nova.web.app>
+- Painel: <https://canal-denuncias-estrela-nova.web.app/admin>
+
+Configuração feita no projeto:
+- Firestore e Storage em `southamerica-east1` (São Paulo). O Firestore tem proteção contra exclusão.
+- Authentication com os provedores Google e Anônimo.
+- Regra de ciclo de vida no bucket que apaga anexos abandonados em `uploads/` após 1 dia.
+- Limpeza automática de imagens antigas de build das funções.
+- Exclusão dos logs de requisição HTTP das funções, para não registrar o IP de quem denuncia.
+- Conta de serviço `github-deploy`, acessada pelo GitHub Actions via **Workload Identity Federation**, sem chave guardada. Só este repositório, no ambiente `producao`, pode usá-la.
 
 ### CI/CD
 
 O workflow `.github/workflows/ci-cd.yml` faz o seguinte:
 - **Em todo PR e push**: roda os testes de validação e os testes das regras de segurança nos emuladores.
-- **Na `main`**: depois dos testes, sincroniza o secret `GMAIL_APP_PASSWORD` no Google Cloud e roda `firebase deploy` (Hosting, Firestore, Storage e Functions).
+- **Em todo push ou merge na `main`**: depois dos testes, sincroniza a senha do Gmail e roda `firebase deploy` (Hosting, Firestore, Storage e Functions).
+- Para rodar sem um novo commit, use *Actions → CI/CD → Run workflow*.
 
-Se o deploy falhar por permissão (`Permission denied` / `403`), conceda o papel indicado na mensagem à conta `github-deploy` em *IAM*.
+Nenhum secret é obrigatório no GitHub. Opcionalmente:
+- **Avisos por e-mail**: ative a verificação em duas etapas da conta Google e gere uma senha de app em <https://myaccount.google.com/apppasswords>. Salve-a no GitHub em *Settings → Environments → producao → Add environment secret*, com o nome `GMAIL_APP_PASSWORD`. Ela é enviada ao Google Cloud no próximo deploy. Sem esse secret, o valor fica "desativado" e o sistema funciona sem avisos.
+- **Aprovação manual de cada deploy**: em *Environments → producao → Required reviewers*.
+
+Se um deploy falhar por permissão (`403` / `Permission denied`), conceda o papel indicado na mensagem à conta `github-deploy` em *IAM*. Para recriar tudo em outro projeto, use `scripts/configurar-deploy.sh`.
 
 ### Deploy manual (alternativa)
 
 ```bash
 npm install && npm --prefix functions install
 npx firebase login
-npx firebase functions:secrets:set GMAIL_APP_PASSWORD   # ou digite "desativado"
+npx firebase functions:secrets:set GMAIL_APP_PASSWORD   # ou "desativado"
 npx firebase deploy
 ```
 
 ### Recomendado após o deploy
 
 - **Domínio próprio** (ex.: `denuncias.estrelanova.org.br`): em *Hosting → Adicionar domínio personalizado*, crie os registros DNS indicados. Depois, adicione o domínio em *Authentication → Configurações → Domínios autorizados*. Vale pôr um link "Canal de Denúncias" no rodapé do site do Estrela Nova.
-- **Limpar anexos abandonados**: se alguém envia um anexo e desiste antes de concluir, o arquivo fica em `uploads/`. Crie uma regra de ciclo de vida que apague esses arquivos após 1 dia:
-  ```bash
-  cat > lifecycle.json <<'EOF'
-  {"rule":[{"action":{"type":"Delete"},"condition":{"age":1,"matchesPrefix":["uploads/"]}}]}
-  EOF
-  gcloud storage buckets update gs://<nome-do-bucket> --lifecycle-file=lifecycle.json  # nome exibido no console do Storage
-  ```
-- **Logs e anonimato**: a aplicação não grava IP nem dados do dispositivo junto à denúncia. Porém, os logs de requisição do Google Cloud (Cloud Run) registram o IP de quem chama as funções. Para reduzir isso, crie no *Cloud Logging → Roteador de logs* uma exclusão para `resource.type="cloud_run_revision" AND log_name:"requests"`, ou reduza a retenção.
+- **Logs e anonimato** (já aplicado): a aplicação não grava IP nem dados do dispositivo junto à denúncia. Além disso, o roteador de logs do projeto tem a exclusão `requisicoes-http-funcoes`, que descarta os logs de requisição das funções (onde o Google Cloud registraria o IP de quem acessa).
 - **App Check** (opcional): para conter envios automatizados (spam), ative o Firebase App Check com reCAPTCHA Enterprise e passe `enforceAppCheck: true` nas funções.
 
 ## Desenvolvimento local
