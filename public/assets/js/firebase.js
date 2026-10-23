@@ -8,7 +8,7 @@ import { getStorage, connectStorageEmulator } from "https://www.gstatic.com/fire
 import { getFunctions, connectFunctionsEmulator } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js";
 
 // Apenas para a interface; a proteção real está nas regras do Firestore/Storage.
-export const ADMIN_EMAIL = "pedro.a.m.pimenta@gmail.com";
+export const ADMIN_EMAILS = ["pedro.a.m.pimenta@gmail.com", "luana@estrelanova.org.br"];
 const REGIAO = "southamerica-east1";
 
 const local = ["localhost", "127.0.0.1"].includes(location.hostname);

@@ -15,7 +15,7 @@ Roda inteiro no **Firebase** (Hosting, Firestore, Storage, Auth e Cloud Function
 - Uma faixa de emergência no topo orienta a ligar 190, Disque 100 ou procurar o Conselho Tutelar quando uma criança está em risco.
 
 **Administrador** (`/admin`)
-- Login com Google, aceito **somente** para `pedro.a.m.pimenta@gmail.com` (e-mail verificado e provedor Google).
+- Login com Google, aceito **somente** para `pedro.a.m.pimenta@gmail.com` e `luana@estrelanova.org.br` (e-mail verificado e provedor Google).
 - Indicadores, lista com filtros por status e categoria, e busca.
 - Detalhes da denúncia, download de anexos, alteração de status e prioridade.
 - Responde ao denunciante e mantém **anotações internas**, que o denunciante não vê.
@@ -25,13 +25,13 @@ Roda inteiro no **Firebase** (Hosting, Firestore, Storage, Auth e Cloud Function
 
 | Camada | Proteção |
 |---|---|
-| `firestore.rules` | Só o admin lê denúncias. O relato é imutável: o admin altera apenas status, prioridade e flags. Os hashes de senha (`segredos/`) nunca são acessíveis por clientes. |
-| `storage.rules` | O denunciante só **envia** arquivos para a própria pasta temporária: não lê, não lista, não sobrescreve. Só o admin lê os anexos. |
+| `firestore.rules` | Só os admins leem denúncias. O relato é imutável: o admin altera apenas status, prioridade e flags. Os hashes de senha (`segredos/`) nunca são acessíveis por clientes. |
+| `storage.rules` | O denunciante só **envia** arquivos para a própria pasta temporária: não lê, não lista, não sobrescreve. Só os admins leem os anexos. |
 | Cloud Functions | Registram a denúncia, conferem protocolo e senha (hash scrypt) e bloqueiam por 15 minutos após 5 tentativas erradas. A mensagem de erro é a mesma para protocolo inexistente e senha errada. |
 | Hosting | CSP restritiva, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, HSTS e `noindex` no painel. |
 | Front-end | Todo conteúdo é renderizado como texto (`textContent`), sem `innerHTML`, para evitar XSS. |
 
-O e-mail do admin está fixado no código. Para trocá-lo, altere:
+Os e-mails dos admins estão fixados no código. Para incluir ou remover alguém, altere:
 `firestore.rules`, `storage.rules` e, só para a interface, `public/assets/js/firebase.js`.
 
 ## Publicação

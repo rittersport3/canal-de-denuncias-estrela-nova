@@ -45,11 +45,21 @@ test("admin lê denúncias", async () => {
   await assertSucceeds(getDocs(collection(admin(), "denuncias")));
 });
 
+test("segunda administradora também lê denúncias e anexos", async () => {
+  const luana = env.authenticatedContext("luana", tokenGoogle("luana@estrelanova.org.br"));
+  await assertSucceeds(getDoc(doc(luana.firestore(), "denuncias/AAAA-BBBB-CCCC")));
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await uploadBytes(ref(ctx.storage(), "denuncias/AAAA-BBBB-CCCC/g.pdf"), new Uint8Array([1]), { contentType: "application/pdf" });
+  });
+  await assertSucceeds(getBytes(ref(luana.storage(), "denuncias/AAAA-BBBB-CCCC/g.pdf")));
+});
+
 test("visitante, anônimo e outros e-mails não leem denúncias", async () => {
   const contextos = [
     env.unauthenticatedContext(),
     env.authenticatedContext("anon", { firebase: { sign_in_provider: "anonymous" } }),
     env.authenticatedContext("outro", tokenGoogle("outra.pessoa@gmail.com")),
+    env.authenticatedContext("parecido", tokenGoogle("luana@estrelanova.org.br.evil.com")),
     env.authenticatedContext("naoverif", tokenGoogle(ADMIN, { email_verified: false })),
     env.authenticatedContext("senha", { email: ADMIN, email_verified: true, firebase: { sign_in_provider: "password" } }),
   ];

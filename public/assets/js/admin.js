@@ -1,4 +1,4 @@
-import { auth, db, storage, ADMIN_EMAIL } from "./firebase.js";
+import { auth, db, storage, ADMIN_EMAILS } from "./firebase.js";
 import { CATEGORIAS, VINCULOS, STATUS, el, dataHora, badgeStatus, mostrarAlerta } from "./comum.js";
 import {
   GoogleAuthProvider,
@@ -46,7 +46,7 @@ let pararDetalhe = [];
 function ehAdmin(user) {
   return (
     user &&
-    user.email === ADMIN_EMAIL &&
+    ADMIN_EMAILS.includes(user.email) &&
     user.emailVerified &&
     user.providerData.some((p) => p.providerId === "google.com")
   );
@@ -57,7 +57,7 @@ const ms = (ts) => (ts?.toMillis ? ts.toMillis() : null);
 // ---------- Autenticação ----------
 document.getElementById("btn-login").addEventListener("click", async () => {
   const provider = new GoogleAuthProvider();
-  provider.setCustomParameters({ prompt: "select_account", login_hint: ADMIN_EMAIL });
+  provider.setCustomParameters({ prompt: "select_account" });
   try {
     await signInWithPopup(auth, provider);
   } catch (e) {
