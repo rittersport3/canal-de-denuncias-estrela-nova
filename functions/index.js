@@ -1,21 +1,27 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { setGlobalOptions, logger } = require("firebase-functions/v2");
-const { defineSecret } = require("firebase-functions/params");
+const { defineSecret, defineString } = require("firebase-functions/params");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, FieldValue, Timestamp } = require("firebase-admin/firestore");
 const { getStorage } = require("firebase-admin/storage");
-const nodemailer = require("nodemailer");
 const v = require("./validacao");
 
-// E-mail do único administrador. Também está fixado em firestore.rules e storage.rules.
-const ADMIN_EMAIL = "pedro.a.m.pimenta@gmail.com";
 const MAX_ANEXOS = 5;
 const MAX_TENTATIVAS = 5;
 const BLOQUEIO_MINUTOS = 15;
 
-// Senha de app do Gmail usada para enviar os avisos ao administrador.
-const GMAIL_APP_PASSWORD = defineSecret("GMAIL_APP_PASSWORD");
+// Avisos por e-mail enviados pela API do Brevo (https://www.brevo.com).
+// A chave fica no Secret Manager; remetente e destinatário, em functions/.env.
+const BREVO_API_KEY = defineSecret("BREVO_API_KEY");
+const AVISO_REMETENTE = defineString("AVISO_REMETENTE", {
+  default: "",
+  description: "E-mail remetente verificado no Brevo",
+});
+const AVISO_DESTINATARIO = defineString("AVISO_DESTINATARIO", {
+  default: "",
+  description: "E-mail que recebe os avisos de novas denúncias",
+});
 
 setGlobalOptions({ region: "southamerica-east1", maxInstances: 10 });
 initializeApp();
@@ -203,31 +209,36 @@ function urlAdmin() {
 }
 
 async function enviarAviso(assunto, linhas) {
-  let senha = "";
+  let chave = "";
   try {
-    senha = GMAIL_APP_PASSWORD.value();
+    chave = BREVO_API_KEY.value();
   } catch {
-    senha = "";
+    chave = "";
   }
-  if (!senha || senha === "desativado") {
-    logger.warn("GMAIL_APP_PASSWORD não configurado; aviso por e-mail não enviado.", { assunto });
+  const remetente = AVISO_REMETENTE.value();
+  const destinatario = AVISO_DESTINATARIO.value();
+  if (!chave || chave === "desativado" || !remetente || !destinatario) {
+    logger.warn("Brevo não configurado; aviso por e-mail não enviado.", { assunto });
     return;
   }
-  const transporte = nodemailer.createTransport({
-    service: "gmail",
-    auth: { user: ADMIN_EMAIL, pass: senha },
-  });
   const texto = [...linhas, "", `Acesse o painel: ${urlAdmin()}`].join("\n");
-  await transporte.sendMail({
-    from: `Canal de Denúncias Estrela Nova <${ADMIN_EMAIL}>`,
-    to: ADMIN_EMAIL,
-    subject: assunto,
-    text: texto,
+  const resposta = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: { "api-key": chave, "content-type": "application/json", accept: "application/json" },
+    body: JSON.stringify({
+      sender: { name: "Canal de Denúncias Estrela Nova", email: remetente },
+      to: [{ email: destinatario }],
+      subject: assunto,
+      textContent: texto,
+    }),
   });
+  if (!resposta.ok) {
+    throw new Error(`Brevo respondeu ${resposta.status}: ${await resposta.text()}`);
+  }
 }
 
 exports.avisarNovaDenuncia = onDocumentCreated(
-  { document: "denuncias/{protocolo}", secrets: [GMAIL_APP_PASSWORD] },
+  { document: "denuncias/{protocolo}", secrets: [BREVO_API_KEY] },
   async (event) => {
     const d = event.data?.data() || {};
     await enviarAviso(`[Canal de Denúncias] Nova denúncia ${event.params.protocolo}`, [
@@ -241,7 +252,7 @@ exports.avisarNovaDenuncia = onDocumentCreated(
 );
 
 exports.avisarNovaMensagem = onDocumentCreated(
-  { document: "denuncias/{protocolo}/mensagens/{mensagemId}", secrets: [GMAIL_APP_PASSWORD] },
+  { document: "denuncias/{protocolo}/mensagens/{mensagemId}", secrets: [BREVO_API_KEY] },
   async (event) => {
     if (event.data?.get("autor") !== "denunciante") return;
     await enviarAviso(`[Canal de Denúncias] Nova mensagem na denúncia ${event.params.protocolo}`, [

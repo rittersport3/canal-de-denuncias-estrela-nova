@@ -19,7 +19,7 @@ Roda inteiro no **Firebase** (Hosting, Firestore, Storage, Auth e Cloud Function
 - Indicadores, lista com filtros por status e categoria, e busca.
 - Detalhes da denúncia, download de anexos, alteração de status e prioridade.
 - Responde ao denunciante e mantém **anotações internas**, que o denunciante não vê.
-- Recebe **aviso por e-mail** a cada nova denúncia ou nova mensagem do denunciante. Por segurança, o e-mail **não** traz o conteúdo da denúncia, só o protocolo e o link do painel.
+- Recebe **aviso por e-mail** (enviado pelo Brevo) a cada nova denúncia ou nova mensagem do denunciante. Por segurança, o e-mail **não** traz o conteúdo da denúncia, só o protocolo e o link do painel.
 
 ## Segurança
 
@@ -32,7 +32,7 @@ Roda inteiro no **Firebase** (Hosting, Firestore, Storage, Auth e Cloud Function
 | Front-end | Todo conteúdo é renderizado como texto (`textContent`), sem `innerHTML`, para evitar XSS. |
 
 O e-mail do admin está fixado no código. Para trocá-lo, altere:
-`firestore.rules`, `storage.rules`, `functions/index.js` (`ADMIN_EMAIL`) e, só para a interface, `public/assets/js/firebase.js`.
+`firestore.rules`, `storage.rules` e, só para a interface, `public/assets/js/firebase.js`.
 
 ## Publicação
 
@@ -53,11 +53,16 @@ Configuração feita no projeto:
 
 O workflow `.github/workflows/ci-cd.yml` faz o seguinte:
 - **Em todo PR e push**: roda os testes de validação e os testes das regras de segurança nos emuladores.
-- **Em todo push ou merge na `main`**: depois dos testes, sincroniza a senha do Gmail e roda `firebase deploy` (Hosting, Firestore, Storage e Functions).
+- **Em todo push ou merge na `main`**: depois dos testes, sincroniza a chave do Brevo e roda `firebase deploy` (Hosting, Firestore, Storage e Functions).
 - Para rodar sem um novo commit, use *Actions → CI/CD → Run workflow*.
 
 Nenhum secret é obrigatório no GitHub. Opcionalmente:
-- **Avisos por e-mail**: ative a verificação em duas etapas da conta Google e gere uma senha de app em <https://myaccount.google.com/apppasswords>. Salve-a no GitHub em *Settings → Environments → producao → Add environment secret*, com o nome `GMAIL_APP_PASSWORD`. Ela é enviada ao Google Cloud no próximo deploy. Sem esse secret, o valor fica "desativado" e o sistema funciona sem avisos.
+- **Avisos por e-mail** (via [Brevo](https://www.brevo.com), plano gratuito de 300 e-mails/dia):
+  1. Crie uma conta no Brevo e, em *Remetentes, domínios e IPs dedicados → Remetentes*, adicione e confirme o e-mail remetente.
+  2. Em *SMTP e API → Chaves de API*, gere uma chave e salve-a no GitHub em *Settings → Environments → producao → Add environment secret*, com o nome `BREVO_API_KEY`.
+  3. Preencha `AVISO_REMETENTE` e `AVISO_DESTINATARIO` em `functions/.env`.
+
+  A chave é enviada ao Google Cloud no próximo deploy. Sem ela, o valor fica "desativado" e o sistema funciona sem avisos.
 - **Aprovação manual de cada deploy**: em *Environments → producao → Required reviewers*.
 
 Se um deploy falhar por permissão (`403` / `Permission denied`), conceda o papel indicado na mensagem à conta `github-deploy` em *IAM*. Para recriar tudo em outro projeto, use `scripts/configurar-deploy.sh`.
@@ -67,7 +72,7 @@ Se um deploy falhar por permissão (`403` / `Permission denied`), conceda o pape
 ```bash
 npm install && npm --prefix functions install
 npx firebase login
-npx firebase functions:secrets:set GMAIL_APP_PASSWORD   # ou "desativado"
+npx firebase functions:secrets:set BREVO_API_KEY   # ou "desativado"
 npx firebase deploy
 ```
 
