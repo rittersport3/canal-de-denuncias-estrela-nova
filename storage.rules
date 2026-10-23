@@ -1,0 +1,35 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email == 'pedro.a.m.pimenta@gmail.com'
+        && request.auth.token.email_verified == true
+        && request.auth.token.firebase.sign_in_provider == 'google.com';
+    }
+
+    // Área temporária: o denunciante (sessão anônima) só pode ENVIAR arquivos,
+    // nunca ler, listar ou sobrescrever. A Cloud Function move os arquivos para
+    // denuncias/{protocolo}/ quando a denúncia é registrada.
+    match /uploads/{uid}/{arquivo} {
+      allow create: if request.auth != null
+        && request.auth.uid == uid
+        && resource == null
+        && request.resource.size < 15 * 1024 * 1024
+        && (request.resource.contentType.matches('image/.*')
+            || request.resource.contentType == 'application/pdf'
+            || request.resource.contentType.matches('audio/.*')
+            || request.resource.contentType.matches('video/.*'));
+    }
+
+    match /denuncias/{protocolo}/{arquivo} {
+      allow read: if isAdmin();
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

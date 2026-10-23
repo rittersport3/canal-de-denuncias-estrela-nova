@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Fazer denúncia — Canal de Denúncias Estrela Nova</title>
+	<link rel="icon" href="/assets/img/favicon.png">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700&family=Roboto+Slab:wght@300;400&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="/assets/css/style.css">
+	<script type="module" src="/assets/js/comum.js"></script>
+	<script type="module" src="/assets/js/denunciar.js"></script>
+</head>
+<body>
+<main>
+	<div class="container container-estreito">
+		<div class="pagina-titulo">
+			<h1>Fazer uma denúncia</h1>
+			<p>Os campos marcados com <span class="obrigatorio">*</span> são obrigatórios. Quanto mais detalhes, melhor conseguiremos apurar.</p>
+		</div>
+
+		<div id="alertas"></div>
+
+		<form id="form-denuncia" novalidate>
+			<fieldset class="form-bloco">
+				<legend>1. Como você quer se identificar?</legend>
+				<div class="opcoes">
+					<label class="opcao">
+						<input type="radio" name="anonimo" value="sim" checked>
+						<span><strong>Anônimo</strong><small>Nenhum dado pessoal será solicitado. Você acompanha apenas pelo protocolo.</small></span>
+					</label>
+					<label class="opcao">
+						<input type="radio" name="anonimo" value="nao">
+						<span><strong>Identificado</strong><small>Seus dados ficam em sigilo e só serão usados para contato sobre a apuração.</small></span>
+					</label>
+				</div>
+
+				<div id="campos-identificacao" class="oculto mt-20">
+					<div class="campo">
+						<label for="nome">Nome <span class="obrigatorio">*</span></label>
+						<input class="form-control" id="nome" name="nome" maxlength="200" autocomplete="name">
+					</div>
+					<div class="grid grid-2 gap-16">
+						<div class="campo">
+							<label for="email">E-mail</label>
+							<input class="form-control" id="email" name="email" type="email" maxlength="200" autocomplete="email">
+						</div>
+						<div class="campo">
+							<label for="telefone">Telefone / WhatsApp</label>
+							<input class="form-control" id="telefone" name="telefone" type="tel" maxlength="40" autocomplete="tel">
+						</div>
+					</div>
+					<span class="ajuda">Informe pelo menos um meio de contato.</span>
+				</div>
+
+				<div id="aviso-anonimo" class="alerta alerta-info mt-20 mb-0">
+					<p>Para preservar seu anonimato, evite citar detalhes que revelem quem você é. Fotos podem conter dados de localização; se preferir, envie uma captura de tela da imagem.</p>
+				</div>
+
+				<div class="campo mt-20">
+					<label for="vinculo">Qual sua relação com o Estrela Nova?</label>
+					<select class="form-control" id="vinculo" name="vinculo"></select>
+				</div>
+			</fieldset>
+
+			<fieldset class="form-bloco">
+				<legend>2. O que aconteceu?</legend>
+				<div class="campo">
+					<label for="categoria">Tipo de situação <span class="obrigatorio">*</span></label>
+					<select class="form-control" id="categoria" name="categoria" required>
+						<option value="">Selecione…</option>
+					</select>
+				</div>
+				<div class="campo">
+					<label for="descricao">Descreva o ocorrido <span class="obrigatorio">*</span></label>
+					<textarea class="form-control" id="descricao" name="descricao" required minlength="30" maxlength="10000" rows="8" placeholder="Conte o que aconteceu, como aconteceu e qualquer detalhe que considere importante."></textarea>
+					<span class="ajuda"><span id="contador">0</span>/10000 caracteres (mínimo 30)</span>
+				</div>
+				<div class="grid grid-2 gap-16">
+					<div class="campo">
+						<label for="quando">Quando aconteceu?</label>
+						<input class="form-control" id="quando" name="quando" maxlength="200" placeholder="Ex.: 10/03/2026, ou &quot;há duas semanas&quot;">
+					</div>
+					<div class="campo">
+						<label for="onde">Onde aconteceu?</label>
+						<input class="form-control" id="onde" name="onde" maxlength="300" placeholder="Unidade, sala, evento, online…">
+					</div>
+				</div>
+				<div class="campo">
+					<label for="envolvidos">Pessoas envolvidas</label>
+					<textarea class="form-control" id="envolvidos" name="envolvidos" maxlength="2000" rows="3" placeholder="Nome, função ou característica de quem praticou ou sofreu a situação."></textarea>
+				</div>
+				<div class="campo">
+					<label for="testemunhas">Testemunhas</label>
+					<textarea class="form-control" id="testemunhas" name="testemunhas" maxlength="2000" rows="2" placeholder="Alguém mais presenciou ou sabe do ocorrido?"></textarea>
+				</div>
+				<div class="campo">
+					<span class="rotulo">A situação ainda está acontecendo?</span>
+					<div class="radios-inline">
+						<label><input type="radio" name="emAndamento" value="sim"> Sim</label>
+						<label><input type="radio" name="emAndamento" value="nao"> Não</label>
+						<label><input type="radio" name="emAndamento" value="nao_sei" checked> Não sei</label>
+					</div>
+				</div>
+				<div class="campo">
+					<label for="jaComunicou">Você já comunicou isso a alguém? A quem?</label>
+					<input class="form-control" id="jaComunicou" name="jaComunicou" maxlength="2000" placeholder="Ex.: coordenação, Conselho Tutelar, polícia…">
+				</div>
+			</fieldset>
+
+			<fieldset class="form-bloco">
+				<legend>3. Evidências (opcional)</legend>
+				<label class="upload" id="area-upload">
+					<input type="file" id="arquivos" multiple accept="image/*,application/pdf,audio/*,video/*">
+					<strong>Clique para escolher</strong> ou arraste arquivos aqui<br>
+					<small>Fotos, PDFs, áudios ou vídeos · até 5 arquivos de 15 MB cada</small>
+				</label>
+				<ul class="lista-arquivos" id="lista-arquivos"></ul>
+			</fieldset>
+
+			<fieldset class="form-bloco">
+				<legend>4. Crie uma senha para acompanhar</legend>
+				<p>Você receberá um <strong>número de protocolo</strong>. Com ele e esta senha, poderá acompanhar a denúncia e conversar com a equipe de apuração. <strong>Não é possível recuperar a senha</strong>, então guarde-a com cuidado.</p>
+				<div class="grid grid-2 gap-16">
+					<div class="campo">
+						<label for="senha">Senha <span class="obrigatorio">*</span></label>
+						<input class="form-control" id="senha" name="senha" type="password" minlength="8" maxlength="128" required autocomplete="new-password">
+						<span class="ajuda">Mínimo de 8 caracteres.</span>
+					</div>
+					<div class="campo">
+						<label for="senha2">Confirme a senha <span class="obrigatorio">*</span></label>
+						<input class="form-control" id="senha2" name="senha2" type="password" minlength="8" maxlength="128" required autocomplete="new-password">
+					</div>
+				</div>
+				<label class="aceite">
+					<input type="checkbox" id="aceite" required>
+					<span>Declaro que as informações são verdadeiras, de acordo com o meu conhecimento, e que este relato é feito de boa-fé.</span>
+				</label>
+			</fieldset>
+
+			<button class="btn btn-pink btn-block" type="submit" id="btn-enviar">Enviar denúncia</button>
+			<p class="ajuda centro mt-12" id="progresso" aria-live="polite"></p>
+		</form>
+
+		<section id="sucesso" class="oculto">
+			<div class="form-bloco">
+				<h2>Denúncia registrada com sucesso</h2>
+				<p>Obrigado pela confiança. Sua denúncia será analisada com sigilo e imparcialidade.</p>
+				<div class="protocolo-box">
+					<div>Seu número de protocolo é:</div>
+					<div class="protocolo-codigo" id="protocolo"></div>
+					<div class="nao-imprimir botoes-centro">
+						<button class="btn btn-blue btn-sm" type="button" id="btn-copiar">Copiar protocolo</button>
+						<button class="btn btn-outline btn-sm" type="button" id="btn-baixar">Baixar comprovante</button>
+						<button class="btn btn-outline btn-sm" type="button" id="btn-imprimir">Imprimir</button>
+					</div>
+				</div>
+				<div class="alerta alerta-aviso">
+					<p><strong>Anote o protocolo e a senha agora.</strong> Por segurança, eles não podem ser recuperados e não serão exibidos novamente.</p>
+				</div>
+				<p>Volte em alguns dias para acompanhar o andamento: a equipe pode responder ou pedir mais informações.</p>
+				<a class="btn btn-dark-blue nao-imprimir" href="/acompanhar">Acompanhar denúncia</a>
+			</div>
+		</section>
+	</div>
+</main>
+</body>
+</html>
