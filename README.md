@@ -15,24 +15,27 @@ Roda inteiro no **Firebase** (Hosting, Firestore, Storage, Auth e Cloud Function
 - Uma faixa de emergência no topo orienta a ligar 190, Disque 100 ou procurar o Conselho Tutelar quando uma criança está em risco.
 
 **Administrador** (`/admin`)
-- Login com Google, aceito **somente** para `pedro.a.m.pimenta@gmail.com` (e-mail verificado e provedor Google).
+- Login com Google, aceito **somente** para `pedro.a.m.pimenta@gmail.com` e `luana@estrelanova.org.br` (e-mail verificado e provedor Google).
 - Indicadores, lista com filtros por status e categoria, e busca.
 - Detalhes da denúncia, download de anexos, alteração de status e prioridade.
 - Responde ao denunciante e mantém **anotações internas**, que o denunciante não vê.
-- Recebe **aviso por e-mail** a cada nova denúncia ou nova mensagem do denunciante. Por segurança, o e-mail **não** traz o conteúdo da denúncia, só o protocolo e o link do painel.
+- **Destinatários dos avisos** cadastrados no próprio painel, em duas listas:
+  - **Denúncias comuns**: avisada quando o denunciante informa que a situação não envolve a diretoria.
+  - **Quando pode envolver a diretoria**: avisada, **sozinha**, quando o denunciante responde "Sim" ou "Não sei". Assim um membro da diretoria não é avisado de uma denúncia que pode ser contra ele. Se essa lista estiver vazia, ninguém é avisado e o caso aparece só no painel (com o selo "diretoria").
+- Os avisos são enviados pelo Brevo, um e-mail separado por destinatário. Por segurança, o e-mail **não** traz o conteúdo da denúncia, só o protocolo e o link do painel.
 
 ## Segurança
 
 | Camada | Proteção |
 |---|---|
-| `firestore.rules` | Só o admin lê denúncias. O relato é imutável: o admin altera apenas status, prioridade e flags. Os hashes de senha (`segredos/`) nunca são acessíveis por clientes. |
-| `storage.rules` | O denunciante só **envia** arquivos para a própria pasta temporária: não lê, não lista, não sobrescreve. Só o admin lê os anexos. |
+| `firestore.rules` | Só os admins leem denúncias. O relato é imutável: o admin altera apenas status, prioridade e flags. Os hashes de senha (`segredos/`) nunca são acessíveis por clientes. |
+| `storage.rules` | O denunciante só **envia** arquivos para a própria pasta temporária: não lê, não lista, não sobrescreve. Só os admins leem os anexos. |
 | Cloud Functions | Registram a denúncia, conferem protocolo e senha (hash scrypt) e bloqueiam por 15 minutos após 5 tentativas erradas. A mensagem de erro é a mesma para protocolo inexistente e senha errada. |
 | Hosting | CSP restritiva, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, HSTS e `noindex` no painel. |
 | Front-end | Todo conteúdo é renderizado como texto (`textContent`), sem `innerHTML`, para evitar XSS. |
 
-O e-mail do admin está fixado no código. Para trocá-lo, altere:
-`firestore.rules`, `storage.rules`, `functions/index.js` (`ADMIN_EMAIL`) e, só para a interface, `public/assets/js/firebase.js`.
+Os e-mails dos admins estão fixados no código. Para incluir ou remover alguém, altere:
+`firestore.rules`, `storage.rules` e, só para a interface, `public/assets/js/firebase.js`.
 
 ## Publicação
 
@@ -53,11 +56,17 @@ Configuração feita no projeto:
 
 O workflow `.github/workflows/ci-cd.yml` faz o seguinte:
 - **Em todo PR e push**: roda os testes de validação e os testes das regras de segurança nos emuladores.
-- **Em todo push ou merge na `main`**: depois dos testes, sincroniza a senha do Gmail e roda `firebase deploy` (Hosting, Firestore, Storage e Functions).
+- **Em todo push ou merge na `main`**: depois dos testes, sincroniza a chave do Brevo e roda `firebase deploy` (Hosting, Firestore, Storage e Functions).
 - Para rodar sem um novo commit, use *Actions → CI/CD → Run workflow*.
 
 Nenhum secret é obrigatório no GitHub. Opcionalmente:
-- **Avisos por e-mail**: ative a verificação em duas etapas da conta Google e gere uma senha de app em <https://myaccount.google.com/apppasswords>. Salve-a no GitHub em *Settings → Environments → producao → Add environment secret*, com o nome `GMAIL_APP_PASSWORD`. Ela é enviada ao Google Cloud no próximo deploy. Sem esse secret, o valor fica "desativado" e o sistema funciona sem avisos.
+- **Avisos por e-mail** (via [Brevo](https://www.brevo.com), plano gratuito de 300 e-mails/dia):
+  1. Crie uma conta no Brevo e, em *Remetentes, domínios e IPs dedicados → Remetentes*, adicione e confirme o e-mail remetente.
+  2. Em *SMTP e API → Chaves de API*, gere uma chave e salve-a no GitHub em *Settings → Environments → producao → Add environment secret*, com o nome `BREVO_API_KEY`.
+  3. Preencha `AVISO_REMETENTE` em `functions/.env` com o remetente verificado.
+  4. Cadastre os destinatários no painel, em *Destinatários dos avisos*.
+
+  A chave é enviada ao Google Cloud no próximo deploy. Sem ela, o valor fica "desativado" e o sistema funciona sem avisos.
 - **Aprovação manual de cada deploy**: em *Environments → producao → Required reviewers*.
 
 Se um deploy falhar por permissão (`403` / `Permission denied`), conceda o papel indicado na mensagem à conta `github-deploy` em *IAM*. Para recriar tudo em outro projeto, use `scripts/configurar-deploy.sh`.
@@ -67,7 +76,7 @@ Se um deploy falhar por permissão (`403` / `Permission denied`), conceda o pape
 ```bash
 npm install && npm --prefix functions install
 npx firebase login
-npx firebase functions:secrets:set GMAIL_APP_PASSWORD   # ou "desativado"
+npx firebase functions:secrets:set BREVO_API_KEY   # ou "desativado"
 npx firebase deploy
 ```
 

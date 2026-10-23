@@ -38,6 +38,8 @@ test("denúncia anônima válida descarta identificação", () => {
   assert.strictEqual(d.anonimo, true);
   assert.strictEqual(d.identificacao, null);
   assert.strictEqual(d.vinculo, "nao_informado");
+  assert.strictEqual(d.envolveDiretoria, "nao_sei");
+  assert.strictEqual(v.validarDenuncia({ ...base, envolveDiretoria: "sim" }).envolveDiretoria, "sim");
 });
 
 test("denúncia identificada exige contato", () => {

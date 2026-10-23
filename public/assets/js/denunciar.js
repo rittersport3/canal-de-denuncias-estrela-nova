@@ -87,6 +87,7 @@ function validar() {
   const erros = [];
   if (!form.categoria.value) erros.push("Selecione o tipo de situação.");
   if (form.descricao.value.trim().length < 30) erros.push("Descreva o ocorrido com pelo menos 30 caracteres.");
+  if (!form.envolveDiretoria.value) erros.push("Informe se a situação envolve algum membro da diretoria.");
   if (form.anonimo.value === "nao") {
     if (form.nome.value.trim().length < 2) erros.push("Informe seu nome ou escolha a opção anônima.");
     if (!form.email.value.trim() && !form.telefone.value.trim()) erros.push("Informe um e-mail ou telefone para contato.");
@@ -151,6 +152,7 @@ form.addEventListener("submit", async (e) => {
       envolvidos: form.envolvidos.value,
       testemunhas: form.testemunhas.value,
       emAndamento: form.emAndamento.value,
+      envolveDiretoria: form.envolveDiretoria.value,
       jaComunicou: form.jaComunicou.value,
       senha: form.senha.value,
       anexos,

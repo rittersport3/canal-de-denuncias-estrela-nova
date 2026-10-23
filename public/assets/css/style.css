@@ -499,3 +499,4 @@ select.form-control { appearance: auto; }
 .detalhe-resumo dt { font-weight: 700; color: var(--azul-escuro); font-size: .9em; }
 .detalhe-resumo dd { margin: 0; white-space: pre-wrap; word-wrap: break-word; font-weight: 400; }
 @media (max-width: 640px) { .detalhe-resumo { grid-template-columns: 1fr; } .detalhe-resumo dd { margin-bottom: 8px; } }
+.badge-diretoria { background: var(--laranja); color: #fff; border-radius: 10px; font-size: .7em; padding: 1px 8px; font-weight: 700; }

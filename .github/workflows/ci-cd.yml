@@ -67,17 +67,17 @@ jobs:
           workload_identity_provider: projects/587891445500/locations/global/workloadIdentityPools/github/providers/github
           service_account: github-deploy@canal-denuncias-estrela-nova.iam.gserviceaccount.com
 
-      # As funções de aviso dependem do secret GMAIL_APP_PASSWORD no Google Cloud.
+      # As funções de aviso dependem do secret BREVO_API_KEY no Google Cloud.
       # Ele é criado/atualizado a partir do secret de mesmo nome do GitHub; sem ele,
-      # é criado com o valor "desativado" e os avisos por e-mail ficam desligados.
-      - name: Sincroniza senha do Gmail
+      # fica com o valor "desativado" e os avisos por e-mail ficam desligados.
+      - name: Sincroniza chave do Brevo
         env:
-          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
         run: |
-          desejado="${GMAIL_APP_PASSWORD:-desativado}"
-          atual="$(npx firebase functions:secrets:access GMAIL_APP_PASSWORD --project "$PROJETO" 2>/dev/null || true)"
+          desejado="${BREVO_API_KEY:-desativado}"
+          atual="$(npx firebase functions:secrets:access BREVO_API_KEY --project "$PROJETO" 2>/dev/null || true)"
           if [ "$atual" != "$desejado" ]; then
-            printf '%s' "$desejado" | npx firebase functions:secrets:set GMAIL_APP_PASSWORD --data-file=- --project "$PROJETO" --non-interactive
+            printf '%s' "$desejado" | npx firebase functions:secrets:set BREVO_API_KEY --data-file=- --project "$PROJETO" --non-interactive
           else
             echo "Secret já está atualizado."
           fi

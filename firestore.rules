@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// Somente o administrador (login Google com e-mail verificado) acessa as
+// Somente os administradores (login Google com e-mail verificado) acessam as
 // denúncias diretamente. Denunciantes falam apenas com as Cloud Functions,
 // que usam o Admin SDK e ignoram estas regras.
 service cloud.firestore {
@@ -8,7 +8,7 @@ service cloud.firestore {
 
     function isAdmin() {
       return request.auth != null
-        && request.auth.token.email == 'pedro.a.m.pimenta@gmail.com'
+        && request.auth.token.email in ['pedro.a.m.pimenta@gmail.com', 'luana@estrelanova.org.br']
         && request.auth.token.email_verified == true
         && request.auth.token.firebase.sign_in_provider == 'google.com';
     }
@@ -34,6 +34,20 @@ service cloud.firestore {
       match /notas/{notaId} {
         allow read, create, delete: if isAdmin();
       }
+    }
+
+    // Destinatários dos avisos por e-mail, cadastrados pelos admins no painel.
+    // "padrao": denúncias comuns; "diretoria": quando pode envolver a diretoria.
+    match /config/notificacoes {
+      allow read: if isAdmin();
+      allow write: if isAdmin()
+        && request.resource.data.keys().hasOnly(['padrao', 'diretoria', 'atualizadaEm', 'atualizadaPor'])
+        && request.resource.data.padrao is list
+        && request.resource.data.padrao.size() <= 20
+        && request.resource.data.diretoria is list
+        && request.resource.data.diretoria.size() <= 20
+        && request.resource.data.atualizadaEm == request.time
+        && request.resource.data.atualizadaPor == request.auth.token.email;
     }
 
     // Hash de senhas e controle de tentativas: nunca acessível por clientes.

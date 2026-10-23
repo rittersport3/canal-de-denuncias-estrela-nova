@@ -46,7 +46,7 @@ gcloud iam workload-identity-pools providers describe github --location=global -
     --workload-identity-pool=github --display-name="GitHub" \
     --issuer-uri="https://token.actions.githubusercontent.com" \
     --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.environment=assertion.environment" \
-    --attribute-condition="assertion.repository=='${REPO}' && assertion.sub=='repo:${REPO}:environment:producao'"
+    --attribute-condition="assertion.repository=='${REPO}' && assertion.environment=='producao'"
 gcloud iam service-accounts add-iam-policy-binding "$EMAIL" --role=roles/iam.workloadIdentityUser \
   --member="principalSet://iam.googleapis.com/projects/${NUMERO}/locations/global/workloadIdentityPools/github/attribute.repository/${REPO}" \
   --condition=None >/dev/null

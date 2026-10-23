@@ -1,4 +1,4 @@
-import { auth, db, storage, ADMIN_EMAIL } from "./firebase.js";
+import { auth, db, storage, ADMIN_EMAILS } from "./firebase.js";
 import { CATEGORIAS, VINCULOS, STATUS, el, dataHora, badgeStatus, mostrarAlerta } from "./comum.js";
 import {
   GoogleAuthProvider,
@@ -19,6 +19,7 @@ import {
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
+import { iniciarConfigAvisos } from "./admin-avisos.js";
 
 const telas = {
   login: document.getElementById("tela-login"),
@@ -41,12 +42,13 @@ for (const [v, t] of Object.entries(CATEGORIAS)) filtroCategoria.append(el("opti
 let denuncias = [];
 let selecionada = null;
 let pararLista = null;
+let pararAvisos = null;
 let pararDetalhe = [];
 
 function ehAdmin(user) {
   return (
     user &&
-    user.email === ADMIN_EMAIL &&
+    ADMIN_EMAILS.includes(user.email) &&
     user.emailVerified &&
     user.providerData.some((p) => p.providerId === "google.com")
   );
@@ -57,7 +59,7 @@ const ms = (ts) => (ts?.toMillis ? ts.toMillis() : null);
 // ---------- Autenticação ----------
 document.getElementById("btn-login").addEventListener("click", async () => {
   const provider = new GoogleAuthProvider();
-  provider.setCustomParameters({ prompt: "select_account", login_hint: ADMIN_EMAIL });
+  provider.setCustomParameters({ prompt: "select_account" });
   try {
     await signInWithPopup(auth, provider);
   } catch (e) {
@@ -88,11 +90,14 @@ onAuthStateChanged(auth, async (user) => {
   document.getElementById("usuario-email").textContent = user.email;
   mostrar("painel");
   iniciarLista();
+  pararAvisos = iniciarConfigAvisos(user.email);
 });
 
 function pararTudo() {
   if (pararLista) pararLista();
   pararLista = null;
+  if (pararAvisos) pararAvisos();
+  pararAvisos = null;
   pararDetalhe.forEach((f) => f());
   pararDetalhe = [];
   denuncias = [];
@@ -163,7 +168,15 @@ function renderLista() {
             "div",
             { class: "linha1" },
             el("span", { class: "prot" }, d.id),
-            el("span", {}, d.aguardandoResposta ? el("span", { class: "badge-nova" }, "nova mensagem") : null, " ", badgeStatus(d.status))
+            el(
+              "span",
+              {},
+              ["sim", "nao_sei"].includes(d.envolveDiretoria) ? el("span", { class: "badge-diretoria", title: "Pode envolver a diretoria" }, "diretoria") : null,
+              " ",
+              d.aguardandoResposta ? el("span", { class: "badge-nova" }, "nova mensagem") : null,
+              " ",
+              badgeStatus(d.status)
+            )
           ),
           el("span", { class: "cat" }, CATEGORIAS[d.categoria] || d.categoria),
           el("span", { class: "meta" }, `${dataHora(ms(d.criadaEm))} · ${d.anonimo ? "Anônima" : "Identificada"}${d.prioridade === "alta" ? " · Prioridade alta" : ""}`)
@@ -358,6 +371,7 @@ function renderCabecalhoDetalhe(d) {
       ...item("Envolvidos", d.envolvidos),
       ...item("Testemunhas", d.testemunhas),
       ...item("Ainda acontece?", andamento[d.emAndamento]),
+      ...item("Envolve a diretoria?", andamento[d.envolveDiretoria]),
       ...item("Já comunicou", d.jaComunicou),
       el("dt", {}, "Anexos"),
       anexos
