@@ -1,0 +1,95 @@
+name: CI/CD
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  testes:
+    name: Testes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            functions/package-lock.json
+
+      # Os emuladores do Firestore e do Storage precisam de Java.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - run: npm ci
+      - run: npm --prefix functions ci
+      - run: npm test
+
+  deploy:
+    name: Deploy no Firebase
+    needs: testes
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: producao
+    permissions:
+      contents: read
+    env:
+      PROJETO: ${{ vars.FIREBASE_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            functions/package-lock.json
+
+      - run: npm ci
+      - run: npm --prefix functions ci
+
+      - name: Verifica configuração
+        env:
+          CREDENCIAL: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$PROJETO" ]; then
+            echo "::error::Defina a variável FIREBASE_PROJECT_ID em Settings > Secrets and variables > Actions > Variables."
+            exit 1
+          fi
+          if [ -z "$CREDENCIAL" ]; then
+            echo "::error::Defina o secret FIREBASE_SERVICE_ACCOUNT (JSON da conta de serviço) no ambiente 'producao'."
+            exit 1
+          fi
+
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      # As funções de aviso dependem do secret GMAIL_APP_PASSWORD no Google Cloud.
+      # Ele é criado/atualizado a partir do secret de mesmo nome do GitHub; sem ele,
+      # é criado com o valor "desativado" e os avisos por e-mail ficam desligados.
+      - name: Sincroniza senha do Gmail
+        env:
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: |
+          desejado="${GMAIL_APP_PASSWORD:-desativado}"
+          atual="$(npx firebase functions:secrets:access GMAIL_APP_PASSWORD --project "$PROJETO" 2>/dev/null || true)"
+          if [ "$atual" != "$desejado" ]; then
+            printf '%s' "$desejado" | npx firebase functions:secrets:set GMAIL_APP_PASSWORD --data-file=- --project "$PROJETO" --non-interactive
+          else
+            echo "Secret já está atualizado."
+          fi
+
+      - name: Deploy
+        run: npx firebase deploy --project "$PROJETO" --non-interactive --force

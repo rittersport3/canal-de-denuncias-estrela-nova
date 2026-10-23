@@ -209,7 +209,7 @@ async function enviarAviso(assunto, linhas) {
   } catch {
     senha = "";
   }
-  if (!senha) {
+  if (!senha || senha === "desativado") {
     logger.warn("GMAIL_APP_PASSWORD não configurado; aviso por e-mail não enviado.", { assunto });
     return;
   }

@@ -43,21 +43,35 @@ Use a conta **pedro.a.m.pimenta@gmail.com**.
 3. **Authentication → Método de login**: ative **Google** e **Anônimo**. O anônimo serve só para autorizar o envio de anexos e não identifica ninguém.
 4. **Firestore Database**: crie em modo produção, região `southamerica-east1`.
 5. **Storage**: crie o bucket padrão, de preferência na mesma região.
-6. **Aviso por e-mail** (senha de app do Gmail):
-   - Ative a verificação em duas etapas na conta Google.
-   - Gere uma senha de app em <https://myaccount.google.com/apppasswords>.
-   - Grave-a como secret:
-     ```bash
-     npx firebase functions:secrets:set GMAIL_APP_PASSWORD
-     ```
-7. **Deploy**:
+6. **Conta de serviço para o deploy automático**: abra o [Cloud Shell](https://shell.cloud.google.com) com a mesma conta, envie o arquivo `scripts/configurar-deploy.sh` (menu ⋮ → *Upload*) e rode:
    ```bash
-   npm install
-   npm --prefix functions install
-   npx firebase login
-   npx firebase deploy
+   bash configurar-deploy.sh <ID_DO_PROJETO>
    ```
-8. O site fica em `https://<id-do-projeto>.web.app`. O painel fica em `/admin`.
+   O script ativa as APIs, cria a conta `github-deploy` com as permissões necessárias e imprime uma chave JSON.
+7. **Configure o GitHub** em *Settings → Environments → New environment*. Crie o ambiente `producao` e, nele:
+   - **Secret `FIREBASE_SERVICE_ACCOUNT`**: cole o JSON impresso pelo script e depois apague o arquivo no Cloud Shell (`rm chave-github.json`).
+   - **Secret `GMAIL_APP_PASSWORD`** (opcional, para os avisos por e-mail): ative a verificação em duas etapas na conta Google e gere uma senha de app em <https://myaccount.google.com/apppasswords>. Sem esse secret, o sistema funciona, mas sem avisos por e-mail.
+   - Em *Settings → Secrets and variables → Actions → Variables*, crie a **variável `FIREBASE_PROJECT_ID`** com o ID do projeto.
+   - Opcional: em *Deployment protection rules*, marque *Required reviewers* para aprovar cada deploy manualmente.
+8. **Deploy**: todo push ou merge na branch `main` roda os testes e, se passarem, publica no Firebase. Para rodar sem um novo commit, use *Actions → CI/CD → Run workflow*.
+9. O site fica em `https://<id-do-projeto>.web.app`. O painel fica em `/admin`.
+
+### CI/CD
+
+O workflow `.github/workflows/ci-cd.yml` faz o seguinte:
+- **Em todo PR e push**: roda os testes de validação e os testes das regras de segurança nos emuladores.
+- **Na `main`**: depois dos testes, sincroniza o secret `GMAIL_APP_PASSWORD` no Google Cloud e roda `firebase deploy` (Hosting, Firestore, Storage e Functions).
+
+Se o deploy falhar por permissão (`Permission denied` / `403`), conceda o papel indicado na mensagem à conta `github-deploy` em *IAM*.
+
+### Deploy manual (alternativa)
+
+```bash
+npm install && npm --prefix functions install
+npx firebase login
+npx firebase functions:secrets:set GMAIL_APP_PASSWORD   # ou digite "desativado"
+npx firebase deploy
+```
 
 ### Recomendado após o deploy
 
@@ -97,4 +111,6 @@ functions/              Cloud Functions (registro, consulta, mensagens, avisos p
 firestore.rules         regras de acesso ao banco
 storage.rules           regras de acesso aos anexos
 tests/                  testes das regras (rodam no emulador)
+scripts/                configuração única da conta de serviço do deploy
+.github/workflows/      CI/CD (testes em PRs, deploy na main)
 ```
